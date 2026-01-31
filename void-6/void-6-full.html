@@ -1,20 +1,707 @@
-{
-  "name": "void-v6-api",
-  "version": "1.0.0",
-  "description": "VOID V6 API Server",
-  "main": "api-server.js",
-  "scripts": {
-    "start": "node api-server.js",
-    "dev": "nodemon api-server.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.0",
-    "uuid": "^9.0.0"
-  },
-  "devDependencies": {
-    "nodemon": "^2.0.22"
-  }
-}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOID V6 - النسخة الكاملة الآمنة</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --danger: #ef4444;
+            --success: #10b981;
+            --bg: #0a0a0a;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: white;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(90deg, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* RTL Support */
+        .rtl-grid {
+            direction: rtl;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #4f46e5;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- App Container -->
+    <div id="app" class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="glass sticky top-0 z-50 border-b border-white/10">
+            <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <h1 class="text-2xl font-bold gradient-text">VOID</h1>
+                    <span class="text-xs px-2 py-1 rounded-full bg-purple-900/50 text-purple-300">V6</span>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <div id="userMenu" class="hidden">
+                        <button onclick="toggleUserMenu()" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5">
+                            <div id="userAvatar" class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center font-bold"></div>
+                            <span id="userName" class="text-sm"></span>
+                        </button>
+                        <div id="dropdownMenu" class="hidden absolute mt-2 right-4 bg-gray-900 border border-gray-800 rounded-lg shadow-xl w-48">
+                            <button onclick="logout()" class="w-full text-right px-4 py-3 hover:bg-red-900/30 text-red-400">تسجيل الخروج</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="max-w-3xl mx-auto px-4 py-8">
+            <!-- Auth Screen -->
+            <div id="authScreen" class="min-h-[80vh] flex items-center justify-center">
+                <div class="w-full max-w-md glass rounded-2xl p-8 space-y-6">
+                    <div class="text-center space-y-2">
+                        <h2 class="text-3xl font-bold gradient-text">مرحباً بك</h2>
+                        <p class="text-gray-400 text-sm">سجل دخولك إلى عالم VOID</p>
+                    </div>
+                    
+                    <div id="authTabs" class="flex border-b border-gray-800">
+                        <button onclick="switchAuthTab('login')" class="flex-1 py-3 font-medium" id="loginTab">تسجيل الدخول</button>
+                        <button onclick="switchAuthTab('register')" class="flex-1 py-3 font-medium text-gray-400" id="registerTab">حساب جديد</button>
+                    </div>
+                    
+                    <div id="authForms">
+                        <!-- Login Form -->
+                        <form id="loginForm" class="space-y-4">
+                            <div>
+                                <input type="text" id="loginUsername" placeholder="اسم المستخدم أو البريد" 
+                                       class="w-full p-3 rounded-lg bg-gray-900 border border-gray-800 focus:border-purple-600 outline-none">
+                                <p id="loginUserError" class="text-red-400 text-sm mt-1 hidden"></p>
+                            </div>
+                            
+                            <div>
+                                <input type="password" id="loginPassword" placeholder="كلمة المرور" 
+                                       class="w-full p-3 rounded-lg bg-gray-900 border border-gray-800 focus:border-purple-600 outline-none">
+                                <p id="loginPassError" class="text-red-400 text-sm mt-1 hidden"></p>
+                            </div>
+                            
+                            <button type="button" onclick="handleLogin()" 
+                                    class="w-full bg-purple-600 hover:bg-purple-700 p-3 rounded-lg font-bold transition-colors">
+                                دخول
+                            </button>
+                        </form>
+                        
+                        <!-- Register Form -->
+                        <form id="registerForm" class="space-y-4 hidden">
+                            <div>
+                                <input type="text" id="regUsername" placeholder="اسم المستخدم" 
+                                       class="w-full p-3 rounded-lg bg-gray-900 border border-gray-800 focus:border-purple-600 outline-none">
+                                <p id="regUserError" class="text-red-400 text-sm mt-1 hidden"></p>
+                            </div>
+                            
+                            <div>
+                                <input type="email" id="regEmail" placeholder="البريد الإلكتروني (اختياري)" 
+                                       class="w-full p-3 rounded-lg bg-gray-900 border border-gray-800 focus:border-purple-600 outline-none">
+                            </div>
+                            
+                            <div>
+                                <input type="password" id="regPassword" placeholder="كلمة المرور" 
+                                       class="w-full p-3 rounded-lg bg-gray-900 border border-gray-800 focus:border-purple-600 outline-none">
+                                <p id="regPassError" class="text-red-400 text-sm mt-1 hidden"></p>
+                            </div>
+                            
+                            <div>
+                                <input type="password" id="regConfirm" placeholder="تأكيد كلمة المرور" 
+                                       class="w-full p-3 rounded-lg bg-gray-900 border border-gray-800 focus:border-purple-600 outline-none">
+                                <p id="regConfirmError" class="text-red-400 text-sm mt-1 hidden"></p>
+                            </div>
+                            
+                            <button type="button" onclick="handleRegister()" 
+                                    class="w-full bg-green-600 hover:bg-green-700 p-3 rounded-lg font-bold transition-colors">
+                                إنشاء حساب
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <p class="text-gray-500 text-xs text-center">
+                        بالدخول فإنك توافق على <a href="#" class="text-purple-400">الشروط</a> و <a href="#" class="text-purple-400">الخصوصية</a>
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Main App Screen -->
+            <div id="mainScreen" class="hidden">
+                <!-- Post Composer -->
+                <div class="glass rounded-2xl p-6 mb-8">
+                    <div class="flex items-start gap-4">
+                        <div id="postAvatar" class="w-12 h-12 rounded-full bg-purple-600 flex items-center justify-center font-bold text-xl"></div>
+                        
+                        <div class="flex-1">
+                            <textarea id="postInput" placeholder="ماذا يخطر في بالك؟" 
+                                      class="w-full bg-transparent outline-none text-lg min-h-[100px] resize-none placeholder:text-gray-600"></textarea>
+                            
+                            <div id="imagePreview" class="mt-4 hidden">
+                                <div class="relative inline-block">
+                                    <img id="previewImg" class="max-h-64 rounded-xl">
+                                    <button onclick="removeImage()" class="absolute top-2 right-2 bg-black/80 w-8 h-8 rounded-full">×</button>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-800">
+                                <div class="flex gap-2">
+                                    <button onclick="triggerImageUpload()" class="p-2 rounded-lg hover:bg-gray-800">
+                                        📷
+                                    </button>
+                                    <input type="file" id="imageUpload" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                                    
+                                    <button class="p-2 rounded-lg hover:bg-gray-800">
+                                        😊
+                                    </button>
+                                </div>
+                                
+                                <button onclick="createPost()" id="postBtn" 
+                                        class="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-lg font-bold">
+                                    نشر
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Feed -->
+                <div id="feed" class="space-y-6">
+                    <!-- Posts will be loaded here -->
+                </div>
+                
+                <!-- Loading -->
+                <div id="loading" class="text-center py-8 hidden">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-purple-600"></div>
+                </div>
+                
+                <!-- No Posts -->
+                <div id="noPosts" class="text-center py-12 glass rounded-2xl">
+                    <div class="text-6xl mb-4">🌌</div>
+                    <h3 class="text-xl font-bold mb-2">الفراغ ينتظر</h3>
+                    <p class="text-gray-400">كن أول من يملأ هذا المكان بأفكاره</p>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Toast Notifications -->
+        <div id="toastContainer" class="fixed bottom-4 left-4 space-y-2 z-50"></div>
+    </div>
+
+    <script>
+        // ====================
+        // STATE MANAGEMENT
+        // ====================
+        const state = {
+            currentUser: null,
+            posts: [],
+            currentImage: null,
+            authMode: 'login'
+        };
+
+        // ====================
+        // UTILITY FUNCTIONS
+        // ====================
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `px-4 py-3 rounded-lg glass ${type === 'error' ? 'border-red-500/50' : 'border-green-500/50'} border animate-fade-in`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        function validateEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        function validatePassword(password) {
+            return password.length >= 6;
+        }
+
+        function validateUsername(username) {
+            return username.length >= 3 && /^[a-zA-Z0-9_]+$/.test(username);
+        }
+
+        // ====================
+        // AUTH FUNCTIONS
+        // ====================
+        function switchAuthTab(mode) {
+            state.authMode = mode;
+            
+            const loginTab = document.getElementById('loginTab');
+            const registerTab = document.getElementById('registerTab');
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            
+            if (mode === 'login') {
+                loginTab.classList.remove('text-gray-400');
+                loginTab.classList.add('text-white', 'border-b-2', 'border-purple-600');
+                registerTab.classList.add('text-gray-400');
+                registerTab.classList.remove('text-white', 'border-b-2', 'border-purple-600');
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+            } else {
+                registerTab.classList.remove('text-gray-400');
+                registerTab.classList.add('text-white', 'border-b-2', 'border-purple-600');
+                loginTab.classList.add('text-gray-400');
+                loginTab.classList.remove('text-white', 'border-b-2', 'border-purple-600');
+                registerForm.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+            }
+        }
+
+        function handleLogin() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            // Reset errors
+            document.getElementById('loginUserError').classList.add('hidden');
+            document.getElementById('loginPassError').classList.add('hidden');
+            
+            // Validation
+            let valid = true;
+            
+            if (!username) {
+                document.getElementById('loginUserError').textContent = 'يجب إدخال اسم المستخدم';
+                document.getElementById('loginUserError').classList.remove('hidden');
+                valid = false;
+            }
+            
+            if (!password) {
+                document.getElementById('loginPassError').textContent = 'يجب إدخال كلمة المرور';
+                document.getElementById('loginPassError').classList.remove('hidden');
+                valid = false;
+            }
+            
+            if (!valid) return;
+            
+            // Simulate API call
+            showToast('جاري تسجيل الدخول...', 'info');
+            
+            setTimeout(() => {
+                // In real app, this would be an API call
+                state.currentUser = {
+                    id: 'user_' + Date.now(),
+                    username: username,
+                    avatar: username.charAt(0).toUpperCase()
+                };
+                
+                // Store in localStorage (in real app, use secure cookies)
+                localStorage.setItem('void_user', JSON.stringify(state.currentUser));
+                
+                showToast('تم تسجيل الدخول بنجاح!', 'success');
+                initializeApp();
+            }, 1000);
+        }
+
+        function handleRegister() {
+            const username = document.getElementById('regUsername').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirm = document.getElementById('regConfirm').value;
+            
+            // Reset errors
+            ['regUserError', 'regPassError', 'regConfirmError'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            
+            // Validation
+            let valid = true;
+            
+            if (!validateUsername(username)) {
+                document.getElementById('regUserError').textContent = 'اسم المستخدم يجب أن يكون 3 أحرف على الأقل ويحتوي على أحرف وأرقام فقط';
+                document.getElementById('regUserError').classList.remove('hidden');
+                valid = false;
+            }
+            
+            if (email && !validateEmail(email)) {
+                document.getElementById('regUserError').textContent = 'البريد الإلكتروني غير صالح';
+                document.getElementById('regUserError').classList.remove('hidden');
+                valid = false;
+            }
+            
+            if (!validatePassword(password)) {
+                document.getElementById('regPassError').textContent = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+                document.getElementById('regPassError').classList.remove('hidden');
+                valid = false;
+            }
+            
+            if (password !== confirm) {
+                document.getElementById('regConfirmError').textContent = 'كلمات المرور غير متطابقة';
+                document.getElementById('regConfirmError').classList.remove('hidden');
+                valid = false;
+            }
+            
+            if (!valid) return;
+            
+            // Simulate API call
+            showToast('جاري إنشاء الحساب...', 'info');
+            
+            setTimeout(() => {
+                state.currentUser = {
+                    id: 'user_' + Date.now(),
+                    username: username,
+                    email: email,
+                    avatar: username.charAt(0).toUpperCase()
+                };
+                
+                // Store in localStorage
+                localStorage.setItem('void_user', JSON.stringify(state.currentUser));
+                localStorage.setItem('void_users', JSON.stringify([
+                    ...(JSON.parse(localStorage.getItem('void_users')) || []),
+                    { username, email, password: btoa(password) } // Note: In real app, hash on server
+                ]));
+                
+                showToast('تم إنشاء الحساب بنجاح!', 'success');
+                initializeApp();
+            }, 1500);
+        }
+
+        function logout() {
+            state.currentUser = null;
+            localStorage.removeItem('void_user');
+            document.getElementById('mainScreen').classList.add('hidden');
+            document.getElementById('authScreen').classList.remove('hidden');
+            document.getElementById('userMenu').classList.add('hidden');
+            document.getElementById('dropdownMenu').classList.add('hidden');
+            showToast('تم تسجيل الخروج', 'info');
+        }
+
+        function toggleUserMenu() {
+            const menu = document.getElementById('dropdownMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        // ====================
+        // POST FUNCTIONS
+        // ====================
+        function triggerImageUpload() {
+            document.getElementById('imageUpload').click();
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Validate file
+            if (!file.type.startsWith('image/')) {
+                showToast('الملف يجب أن يكون صورة', 'error');
+                return;
+            }
+            
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('حجم الصورة يجب أن يكون أقل من 5MB', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                state.currentImage = e.target.result;
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('imagePreview').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage() {
+            state.currentImage = null;
+            document.getElementById('imagePreview').classList.add('hidden');
+            document.getElementById('imageUpload').value = '';
+        }
+
+        function createPost() {
+            const content = document.getElementById('postInput').value.trim();
+            
+            if (!content && !state.currentImage) {
+                showToast('اكتب شيئاً أو أضف صورة', 'error');
+                return;
+            }
+            
+            const postBtn = document.getElementById('postBtn');
+            postBtn.disabled = true;
+            postBtn.textContent = 'جاري النشر...';
+            
+            // Simulate API call
+            setTimeout(() => {
+                const newPost = {
+                    id: 'post_' + Date.now(),
+                    author: state.currentUser.username,
+                    authorAvatar: state.currentUser.avatar,
+                    content: content,
+                    image: state.currentImage,
+                    likes: [],
+                    comments: [],
+                    timestamp: new Date().toISOString(),
+                    timeAgo: 'الآن'
+                };
+                
+                state.posts.unshift(newPost);
+                
+                // Save to localStorage
+                const savedPosts = JSON.parse(localStorage.getItem('void_posts')) || [];
+                savedPosts.unshift(newPost);
+                localStorage.setItem('void_posts', JSON.stringify(savedPosts));
+                
+                // Reset form
+                document.getElementById('postInput').value = '';
+                removeImage();
+                
+                // Update UI
+                renderPosts();
+                showToast('تم نشر منشورك', 'success');
+                
+                postBtn.disabled = false;
+                postBtn.textContent = 'نشر';
+            }, 800);
+        }
+
+        function likePost(postId) {
+            const post = state.posts.find(p => p.id === postId);
+            if (!post) return;
+            
+            const userIndex = post.likes.indexOf(state.currentUser.username);
+            
+            if (userIndex === -1) {
+                post.likes.push(state.currentUser.username);
+            } else {
+                post.likes.splice(userIndex, 1);
+            }
+            
+            // Update localStorage
+            localStorage.setItem('void_posts', JSON.stringify(state.posts));
+            
+            renderPosts();
+        }
+
+        function addComment(postId) {
+            const input = document.getElementById(`commentInput_${postId}`);
+            const comment = input.value.trim();
+            
+            if (!comment) return;
+            
+            const post = state.posts.find(p => p.id === postId);
+            if (!post) return;
+            
+            post.comments.push({
+                author: state.currentUser.username,
+                content: comment,
+                timestamp: new Date().toISOString()
+            });
+            
+            input.value = '';
+            
+            // Update localStorage
+            localStorage.setItem('void_posts', JSON.stringify(state.posts));
+            
+            renderPosts();
+            showToast('تم إضافة التعليق', 'success');
+        }
+
+        function toggleComments(postId) {
+            const container = document.getElementById(`comments_${postId}`);
+            container.classList.toggle('hidden');
+        }
+
+        // ====================
+        // RENDER FUNCTIONS
+        // ====================
+        function renderPosts() {
+            const feed = document.getElementById('feed');
+            const noPosts = document.getElementById('noPosts');
+            const loading = document.getElementById('loading');
+            
+            if (state.posts.length === 0) {
+                feed.classList.add('hidden');
+                noPosts.classList.remove('hidden');
+                loading.classList.add('hidden');
+                return;
+            }
+            
+            noPosts.classList.add('hidden');
+            loading.classList.add('hidden');
+            feed.classList.remove('hidden');
+            
+            feed.innerHTML = state.posts.map(post => `
+                <div class="glass rounded-2xl overflow-hidden">
+                    <!-- Header -->
+                    <div class="p-6 border-b border-gray-800">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center font-bold">
+                                ${post.authorAvatar}
+                            </div>
+                            <div>
+                                <h4 class="font-bold">${post.author}</h4>
+                                <p class="text-gray-400 text-sm">${post.timeAgo}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div class="p-6">
+                        ${post.content ? `<p class="mb-4">${post.content}</p>` : ''}
+                        
+                        ${post.image ? `
+                            <div class="mt-4 rounded-xl overflow-hidden">
+                                <img src="${post.image}" class="w-full max-h-96 object-contain bg-black">
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="px-6 py-4 border-t border-gray-800">
+                        <div class="flex items-center gap-6">
+                            <button onclick="likePost('${post.id}')" class="flex items-center gap-2 ${post.likes.includes(state.currentUser.username) ? 'text-red-500' : 'text-gray-400'}">
+                                <span class="text-xl">${post.likes.includes(state.currentUser.username) ? '❤️' : '🤍'}</span>
+                                <span>${post.likes.length}</span>
+                            </button>
+                            
+                            <button onclick="toggleComments('${post.id}')" class="flex items-center gap-2 text-gray-400">
+                                <span class="text-xl">💬</span>
+                                <span>${post.comments.length}</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Comments -->
+                    <div id="comments_${post.id}" class="hidden border-t border-gray-800">
+                        <div class="p-6 space-y-4">
+                            ${post.comments.map(comment => `
+                                <div class="bg-gray-900/50 rounded-lg p-4">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="font-bold text-sm">${comment.author}</span>
+                                        <span class="text-gray-500 text-xs">•</span>
+                                        <span class="text-gray-500 text-xs">${new Date(comment.timestamp).toLocaleTimeString('ar-EG')}</span>
+                                    </div>
+                                    <p class="text-gray-300">${comment.content}</p>
+                                </div>
+                            `).join('')}
+                            
+                            <div class="flex gap-2">
+                                <input type="text" 
+                                       id="commentInput_${post.id}" 
+                                       placeholder="اكتب تعليقاً..."
+                                       class="flex-1 p-3 rounded-lg bg-gray-900 border border-gray-800 outline-none">
+                                <button onclick="addComment('${post.id}')" class="bg-purple-600 px-4 rounded-lg font-bold">
+                                    إرسال
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ====================
+        // INITIALIZATION
+        // ====================
+        function initializeApp() {
+            // Check if user is logged in
+            const savedUser = localStorage.getItem('void_user');
+            if (savedUser) {
+                state.currentUser = JSON.parse(savedUser);
+            }
+            
+            if (!state.currentUser) {
+                document.getElementById('mainScreen').classList.add('hidden');
+                document.getElementById('authScreen').classList.remove('hidden');
+                return;
+            }
+            
+            // Load posts from localStorage
+            const savedPosts = JSON.parse(localStorage.getItem('void_posts')) || [];
+            state.posts = savedPosts;
+            
+            // Update time ago
+            state.posts.forEach(post => {
+                const diff = Date.now() - new Date(post.timestamp).getTime();
+                const minutes = Math.floor(diff / 60000);
+                const hours = Math.floor(minutes / 60);
+                const days = Math.floor(hours / 24);
+                
+                if (days > 0) {
+                    post.timeAgo = `منذ ${days} يوم`;
+                } else if (hours > 0) {
+                    post.timeAgo = `منذ ${hours} ساعة`;
+                } else if (minutes > 0) {
+                    post.timeAgo = `منذ ${minutes} دقيقة`;
+                } else {
+                    post.timeAgo = 'الآن';
+                }
+            });
+            
+            // Update UI
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('mainScreen').classList.remove('hidden');
+            document.getElementById('userMenu').classList.remove('hidden');
+            
+            document.getElementById('userName').textContent = state.currentUser.username;
+            document.getElementById('userAvatar').textContent = state.currentUser.avatar;
+            document.getElementById('postAvatar').textContent = state.currentUser.avatar;
+            
+            renderPosts();
+        }
+
+        // ====================
+        // ON LOAD
+        // ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeApp();
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#userMenu')) {
+                    document.getElementById('dropdownMenu').classList.add('hidden');
+                }
+            });
+            
+            // Auto-resize textarea
+            document.getElementById('postInput').addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+        });
+
+        // ====================
+        // SERVICE WORKER (PWA SUPPORT)
+        // ====================
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(err => {
+                    console.log('ServiceWorker registration failed:', err);
+                });
+            });
+        }
+    </script>
+</body>
+  </html>
