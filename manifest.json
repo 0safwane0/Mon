@@ -1,0 +1,25 @@
+{
+  "name": "VOID V6",
+  "short_name": "VOID",
+  "description": "منصة تدوين اجتماعي آمنة",
+  "lang": "ar",
+  "dir": "rtl",
+  "theme_color": "#8b5cf6",
+  "background_color": "#0a0a0a",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
